@@ -50,13 +50,55 @@ for (i in 1:N_mat) {
 }
 
 
-prob_wrong_class_B <- c()
-prob_wrong_class_A <- c()
+
+
+bayes_error_method_1 <- c()
+bayes_error_method_2 <- c()
 
 for (i in 1:N_mat) {
   for (j in 1:N_mat) {
-    prob_wrong_class_A <- c(prob_wrong_class_A, as.numeric(classification_boundary[i,j] != 1) * density_class_1[i,j])
-    prob_wrong_class_B <- c(prob_wrong_class_B, as.numeric(classification_boundary[i,j] != 2) * density_class_2[i,j])
+    
+    p_x = (density_class_1[i,j] + density_class_2[i,j]) * .5  
+    
+    sum_over_classes <- c()
+    for (class in 1:2) {
+      
+      
+      
+      
+      if (class == 1) {
+        is_wrong_classification <- as.numeric(classification_boundary[i,j] == 2)
+        p_k_x <- .5 * density_class_1[i,j]
+        p_k_cond_x = p_k_x / p_x
+        
+        sum_over_classes <- c(sum_over_classes, p_k_cond_x * is_wrong_classification)
+      } 
+      
+      else if (class == 2) {
+        is_wrong_classification <- as.numeric(classification_boundary[i,j] == 1)
+        p_k_x <- .5 * density_class_2[i,j]
+        p_k_cond_x = p_k_x / p_x
+    
+        sum_over_classes <- c(sum_over_classes, p_k_cond_x * is_wrong_classification)    
+      }
+    }
+    
+    
+    # We can calculate both ways. we can either do
+    # Kroneker delta is L
+    # Sum over K (1...k ) of L(real_k, bayes_classifier) * p_k_cond_x
+    # To understand p_x, assume we combine all k's we have in the world (k=1 and k=2)
+    # from both probability distributions, thus it has to be the average of the two 
+    # To understand p_k_x, we have to understand p_k_joint_x which is half as the distributions are both the same size
+    # (infinitely big), so p_k_x / p_x should give us the conditional -> the proporiton of each K from all X values
+    # Considering that we are multiplying it by kroneker delta (or misclassification), we know that the K that has higher probability is the one
+    # that is classified, and then multiplied by zero because the delta function, we might as well just calculate the value for the minimum probability
+    # As eventually we are looking for the expectancy over all x, which is the value times the probability of x, we need to multiply again for p_x
+    
+    bayes_error_method_1 <- c(bayes_error_method_1,
+                              ( .5 * min(density_class_1[i,j],density_class_2[i,j]) / (p_x)) *(p_x))
+    bayes_error_method_2 <- c(bayes_error_method_2,
+                              sum(sum_over_classes) * p_x)
   }
 }
 
